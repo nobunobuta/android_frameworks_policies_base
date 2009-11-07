@@ -961,12 +961,7 @@ public class PhoneWindowManager implements WindowManagerPolicy {
             });
         } else {
             // no keyguard stuff to worry about, just launch home!
-            try {
-                ActivityManagerNative.getDefault().stopAppSwitches();
-            } catch (RemoteException e) {
-            }
-            sendCloseSystemWindows();
-            mContext.startActivity(mHomeIntent);
+            goHome();
         }
     }
 
@@ -1506,11 +1501,10 @@ public class PhoneWindowManager implements WindowManagerPolicy {
                         mShouldTurnOffOnKeyUp = false;
                         boolean gohome = (mEndcallBehavior & ENDCALL_HOME) != 0;
                         boolean sleeps = (mEndcallBehavior & ENDCALL_SLEEPS) != 0;
-                        if (keyguardShowing
-                                || (sleeps && !gohome)
-                                || (gohome && !goHome() && sleeps)) {
-                            // they must already be on the keyguad or home screen,
-                            // go to sleep instead
+                        if (!keyguardShowing && gohome) {
+                        	goHome();
+                        }
+                        if (sleeps) {
                             Log.d(TAG, "I'm tired mEndcallBehavior=0x"
                                     + Integer.toHexString(mEndcallBehavior));
                             result &= ~ACTION_POKE_USER_ACTIVITY;
@@ -1806,36 +1800,16 @@ public class PhoneWindowManager implements WindowManagerPolicy {
 
     /**
      * goes to the home screen
-     * @return whether it did anything
      */
-    boolean goHome() {
-        if (false) {
-            // This code always brings home to the front.
-            try {
-                ActivityManagerNative.getDefault().stopAppSwitches();
-            } catch (RemoteException e) {
-            }
-            sendCloseSystemWindows();
-            mContext.startActivity(mHomeIntent);
-        } else {
-            // This code brings home to the front or, if it is already
-            // at the front, puts the device to sleep.
-            try {
-                ActivityManagerNative.getDefault().stopAppSwitches();
-                sendCloseSystemWindows();
-                int result = ActivityManagerNative.getDefault()
-                        .startActivity(null, mHomeIntent,
-                                mHomeIntent.resolveTypeIfNeeded(mContext.getContentResolver()),
-                                null, 0, null, null, 0, true /* onlyIfNeeded*/, false);
-                if (result == IActivityManager.START_RETURN_INTENT_TO_CALLER) {
-                    return false;
-                }
-            } catch (RemoteException ex) {
-                // bummer, the activity manager, which is in this process, is dead
-            }
-        }
-        return true;
-    }
+	void goHome() {
+		// This code always brings home to the front.
+		try {
+			ActivityManagerNative.getDefault().stopAppSwitches();
+		} catch (RemoteException e) {
+		}
+		sendCloseSystemWindows();
+		mContext.startActivity(mHomeIntent);
+	}
     
     public void setCurrentOrientationLw(int newOrientation) {
         synchronized (mLock) {
