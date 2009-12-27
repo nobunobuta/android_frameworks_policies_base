@@ -1072,14 +1072,6 @@ public class MidWindowManager implements WindowManagerPolicy {
         return false;
     }
     
-    public void keyFeedbackFromInput(KeyEvent event) {
-    }
-    
     public void screenOnStoppedLw() {
     }
-
-    public boolean allowKeyRepeat() {
-        return true;
-    }
-
 }

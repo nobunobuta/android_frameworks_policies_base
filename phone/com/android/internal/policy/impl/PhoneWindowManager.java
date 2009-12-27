@@ -1832,25 +1832,12 @@ public class PhoneWindowManager implements WindowManagerPolicy {
         }
         return false;
     }
-
-    public void keyFeedbackFromInput(KeyEvent event) {
-        if (event.getAction() == KeyEvent.ACTION_DOWN
-                && (event.getFlags()&KeyEvent.FLAG_VIRTUAL_HARD_KEY) != 0) {
-            performHapticFeedbackLw(null, HapticFeedbackConstants.VIRTUAL_KEY, false);
-        }
-    }
-
+    
     public void screenOnStoppedLw() {
         if (!mKeyguardMediator.isShowing()) {
             long curTime = SystemClock.uptimeMillis();
             mPowerManager.userActivity(curTime, false, LocalPowerManager.OTHER_EVENT);
         }
     }
-    
-    public boolean allowKeyRepeat() {
-        // disable key repeat when screen is off
-        return mScreenOn;
-    }
-
 }
 
