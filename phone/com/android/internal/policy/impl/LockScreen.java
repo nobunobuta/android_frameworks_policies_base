@@ -31,8 +31,10 @@ import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 import com.android.internal.telephony.IccCard;
+import android.util.Log;
 
 import java.util.Date;
+import java.text.SimpleDateFormat;
 
 /**
  * The screen within {@link LockPatternKeyguardView} that shows general
@@ -298,7 +300,31 @@ class LockScreen extends LinearLayout implements KeyguardScreen, KeyguardUpdateM
     private void refreshTimeAndDateDisplay() {
         Date now = new Date();
         mTime.setText(DateFormat.getTimeFormat(getContext()).format(now));
-        mDate.setText(DateFormat.format("EEEE, MMMM dd, yyyy", now));
+// Mod by nobunobuta
+    	mDate.setText(getLockScreenDateFormat().format(now));
+//        mDate.setText(DateFormat.format("EEEE, MMMM dd, yyyy", now));
+    }
+
+    /**
+     * @return A localized format like "Fri, Sep 18, 2009"
+     */
+    private java.text.DateFormat getLockScreenDateFormat() {
+        SimpleDateFormat adjusted = null;
+        try {
+            // this call gives us the localized order
+            final SimpleDateFormat dateFormat = (SimpleDateFormat)
+                    java.text.DateFormat.getDateInstance(java.text.DateFormat.FULL);
+            adjusted = new SimpleDateFormat(dateFormat.toPattern()
+                    .replace("MMMM", "MMM")    // we want "Sep", not "September"
+                    .replace("EEEE", "EEE")     // we want "Fri", no "Friday"
+        			.replaceAll("EEE$", "(EEE)"));
+        } catch (ClassCastException e) {
+            // in case the library implementation changes and this throws a class cast exception
+            // or anything else that is funky
+            Log.e("LockScreen", "couldn't finnagle our custom date format :(", e);
+            return java.text.DateFormat.getDateInstance(java.text.DateFormat.MEDIUM);
+        }
+        return adjusted;
     }
 
     public void onRefreshCarrierInfo(CharSequence plmn, CharSequence spn) {
