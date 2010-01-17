@@ -138,7 +138,7 @@ public class KeyguardViewMediator implements KeyguardViewCallback,
     
     /** Low level access to the power manager for enableUserActivity.  Having this
      * requires that we run in the system process.  */
-    LocalPowerManager mRealPowerManager;
+    static LocalPowerManager mRealPowerManager;
 
     /** High level access to the power manager for WakeLocks */
     private PowerManager mPM;
@@ -163,6 +163,10 @@ public class KeyguardViewMediator implements KeyguardViewCallback,
     private StatusBarManager mStatusBarManager;
 
     private KeyguardViewManager mKeyguardViewManager;
+
+    public static boolean Securitycheck;
+
+    public static String songname;
 
     // these are protected by synchronized (this)
 
@@ -354,8 +358,13 @@ public class KeyguardViewMediator implements KeyguardViewCallback,
                 if (DEBUG) Log.d(TAG, "previously hidden, reshowing, reenabling "
                         + "status bar expansion");
                 mNeedToReshowWhenReenabled = false;
+                    Log.d(TAG, "Statusbar unlocked");
+                    // Stericson -- This makes sure the statusbar is locked if the user has selected the option
+                    // to always keep the status bar locked.
                 setStatusBarExpandable(true);
-
+                    if (!mKeyguardViewProperties.isSecure())  {
+                    Securitycheck = false;
+                    }
                 if (mExitSecureCallback != null) {
                     if (DEBUG) Log.d(TAG, "onKeyguardExitResult(false), resetting");
                     mExitSecureCallback.onKeyguardExitResult(false);
@@ -526,6 +535,16 @@ public class KeyguardViewMediator implements KeyguardViewCallback,
      */
     private void wakeWhenReadyLocked(int keyCode) {
         if (DBG_WAKE) Log.d(TAG, "wakeWhenReadyLocked(" + keyCode + ")");
+               // (Stericson) This locks the statusbar if Keyguard isSecure()
+               // This occurs when the keyguard is poked to wake up.
+               if (!mKeyguardViewProperties.isSecure()) {
+                 Securitycheck = false;
+                 }
+               if (mKeyguardViewProperties.isSecure()) {
+                    Log.d(TAG, "Statusbar locked");
+                 setStatusBarExpandable(false);
+                 Securitycheck = true;
+                 }
 
         /**
          * acquire the handoff lock that will keep the cpu running.  this will
@@ -546,6 +565,15 @@ public class KeyguardViewMediator implements KeyguardViewCallback,
         if (DEBUG) Log.d(TAG, "showLocked");
         Message msg = mHandler.obtainMessage(SHOW);
         mHandler.sendMessage(msg);
+        // (Stericson) This locks the statusbar upon boot if the Keyguard isSecure()
+        if (!mKeyguardViewProperties.isSecure()) {
+           Securitycheck = false;
+           }
+        if (mKeyguardViewProperties.isSecure()) {
+           Log.d(TAG, "Statusbar locked");
+           setStatusBarExpandable(false);
+           Securitycheck = true;
+           }
     }
 
     /**
@@ -727,6 +755,10 @@ public class KeyguardViewMediator implements KeyguardViewCallback,
 
             if (authenticated) {
                 mUpdateMonitor.clearFailedAttempts();                
+                    Log.d(TAG, "Statusbar unlocked");
+                       setStatusBarExpandable(true); 
+                       if (!mKeyguardViewProperties.isSecure()) {
+                       Securitycheck = false;               
             }
 
             if (mExitSecureCallback != null) {
@@ -738,7 +770,12 @@ public class KeyguardViewMediator implements KeyguardViewCallback,
                     // the keyguard when they've released the lock
                     mExternallyEnabled = true;
                     mNeedToReshowWhenReenabled = false;
+                    Log.d(TAG, "Statusbar unlocked");
                     setStatusBarExpandable(true);
+                       if (!mKeyguardViewProperties.isSecure()) {
+                       Securitycheck = false;
+                      }
+                   }
                 }
             }
         }

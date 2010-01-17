@@ -261,7 +261,14 @@ public class KeyguardUpdateMonitor {
             }
         }
 
+        // Stericson
         final boolean keyboardOpen = queryKeyboardOpen();
+        if (keyboardOpen) {
+            LockScreen.fromportrait = true;
+            }
+        if (!keyboardOpen) {
+            LockScreen.fromportrait = false;
+            }
         if (mKeyboardOpen != keyboardOpen) {
             mKeyboardOpen = keyboardOpen;
             for (int i = 0; i < mConfigurationChangeCallbacks.size(); i++) {
@@ -282,13 +289,16 @@ public class KeyguardUpdateMonitor {
 
     /**
      * Handle {@link #MSG_BATTERY_UPDATE}
+     * Stericson
      */
     private void handleBatteryUpdate(int pluggedInStatus, int batteryLevel) {
         if (DEBUG) Log.d(TAG, "handleBatteryUpdate");
         final boolean pluggedIn = isPluggedIn(pluggedInStatus);
-
-        if (isBatteryUpdateInteresting(pluggedIn, batteryLevel)) {
             mBatteryLevel = batteryLevel;
+            LockScreen.mBatteryLevel = batteryLevel;
+            Log.d(TAG, "We've updated the battery level! LockScreen.java = " + mBatteryLevel);
+            Log.d(TAG, "We've updated the battery level! KeyguardUpdateMonitor.java = " + mBatteryLevel);
+            if (LockScreen.WhatIsShowing == "Battery") {
             mDevicePluggedIn = pluggedIn;
             for (int i = 0; i < mInfoCallbacks.size(); i++) {
                 mInfoCallbacks.get(i).onRefreshBatteryInfo(

@@ -111,24 +111,32 @@ public class PhoneWindowManager implements WindowManagerPolicy {
     static final int APPLICATION_LAYER = 1;
     static final int PHONE_LAYER = 2;
     static final int SEARCH_BAR_LAYER = 3;
-    static final int STATUS_BAR_PANEL_LAYER = 4;
     // toasts and the plugged-in battery thing
-    static final int TOAST_LAYER = 5;
-    static final int STATUS_BAR_LAYER = 6;
+    static final int TOAST_LAYER = 4;
     // SIM errors and unlock.  Not sure if this really should be in a high layer.
-    static final int PRIORITY_PHONE_LAYER = 7;
+    static final int PRIORITY_PHONE_LAYER = 5;
     // like the ANR / app crashed dialogs
-    static final int SYSTEM_ALERT_LAYER = 8;
+    static final int SYSTEM_ALERT_LAYER = 6;
     // system-level error dialogs
-    static final int SYSTEM_ERROR_LAYER = 9;
-    // on-screen keyboards and other such input method user interfaces go here.
-    static final int INPUT_METHOD_LAYER = 10;
-    // on-screen keyboards and other such input method user interfaces go here.
-    static final int INPUT_METHOD_DIALOG_LAYER = 11;
+    static final int SYSTEM_ERROR_LAYER = 7;
     // the keyguard; nothing on top of these can take focus, since they are
     // responsible for power management when displayed.
-    static final int KEYGUARD_LAYER = 12;
-    static final int KEYGUARD_DIALOG_LAYER = 13;
+    static final int KEYGUARD_LAYER = 8;
+    // (Stericson) The following two were originally layered as 4 and 6, respectively.
+    // I changed their layer order in order to make the status bar expandable
+    // even when the lockscreen is up.
+    static final int STATUS_BAR_PANEL_LAYER = 9;
+    static final int STATUS_BAR_LAYER = 10;
+    // (Stericson) The following layer was originally layered as 11.
+    // I changed its layer order in order to make the status bar lie underneath
+    // the power Dialog when the lockscreen is up.
+    static final int KEYGUARD_DIALOG_LAYER = 11;
+    // (Stericson) The Following two layers were originally #8 and #9. I changed them to allow the VK 
+    // to be displayed on top of the keyguard.
+    // on-screen keyboards and other such input method user interfaces go here.
+    static final int INPUT_METHOD_LAYER = 12;
+    // on-screen keyboards and other such input method user interfaces go here.
+    static final int INPUT_METHOD_DIALOG_LAYER = 13;
     // things in here CAN NOT take focus, but are shown on top of everything else.
     static final int SYSTEM_OVERLAY_LAYER = 14;
 
@@ -961,7 +969,12 @@ public class PhoneWindowManager implements WindowManagerPolicy {
             });
         } else {
             // no keyguard stuff to worry about, just launch home!
-            goHome();
+            try {
+                ActivityManagerNative.getDefault().stopAppSwitches();
+            } catch (RemoteException e) {
+            }
+            sendCloseSystemWindows();
+            mContext.startActivity(mHomeIntent);
         }
     }
 
@@ -1501,10 +1514,11 @@ public class PhoneWindowManager implements WindowManagerPolicy {
                         mShouldTurnOffOnKeyUp = false;
                         boolean gohome = (mEndcallBehavior & ENDCALL_HOME) != 0;
                         boolean sleeps = (mEndcallBehavior & ENDCALL_SLEEPS) != 0;
-                        if (!keyguardShowing && gohome) {
-                        	goHome();
-                        }
-                        if (sleeps) {
+                        if (keyguardShowing
+                                || (sleeps && !gohome)
+                                || (gohome && !goHome() && sleeps)) {
+                            // they must already be on the keyguad or home screen,
+                            // go to sleep instead
                             Log.d(TAG, "I'm tired mEndcallBehavior=0x"
                                     + Integer.toHexString(mEndcallBehavior));
                             result &= ~ACTION_POKE_USER_ACTIVITY;
@@ -1800,8 +1814,10 @@ public class PhoneWindowManager implements WindowManagerPolicy {
 
     /**
      * goes to the home screen
+     * @return whether it did anything
      */
-	void goHome() {
+    boolean goHome() {
+        if (false) {
 		// This code always brings home to the front.
 		try {
 			ActivityManagerNative.getDefault().stopAppSwitches();
@@ -1809,6 +1825,24 @@ public class PhoneWindowManager implements WindowManagerPolicy {
 		}
 		sendCloseSystemWindows();
 		mContext.startActivity(mHomeIntent);
+        } else {
+            // This code brings home to the front or, if it is already
+            // at the front, puts the device to sleep.
+            try {
+                ActivityManagerNative.getDefault().stopAppSwitches();
+                sendCloseSystemWindows();
+                int result = ActivityManagerNative.getDefault()
+                        .startActivity(null, mHomeIntent,
+                                mHomeIntent.resolveTypeIfNeeded(mContext.getContentResolver()),
+                                null, 0, null, null, 0, true /* onlyIfNeeded*/, false);
+                if (result == IActivityManager.START_RETURN_INTENT_TO_CALLER) {
+                    return false;
+                }
+            } catch (RemoteException ex) {
+                // bummer, the activity manager, which is in this process, is dead
+            }
+        }
+        return true;
 	}
     
     public void setCurrentOrientationLw(int newOrientation) {

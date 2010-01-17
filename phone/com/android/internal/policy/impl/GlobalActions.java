@@ -40,6 +40,7 @@ import android.widget.ImageView;
 import android.widget.TextView;
 import com.android.internal.R;
 import com.android.internal.app.ShutdownThread;
+import android.app.KeyguardManager;
 import com.google.android.collect.Lists;
 
 import java.util.ArrayList;
@@ -101,8 +102,13 @@ class GlobalActions implements DialogInterface.OnDismissListener, DialogInterfac
             mDialog = createDialog();
         }
         prepareDialog();
-
+        // (Stericson) This leaves the statusbar alone if the keyguard is showing,
+        // Otherwise, this will lock the statusbar.
+        if (mKeyguardShowing != true) {
+        Log.d(TAG, "ShowDialog... locking keyguard.");
         mStatusBar.disable(StatusBarManager.DISABLE_EXPAND);
+        
+        }
         mDialog.show();
     }
 
@@ -241,7 +247,12 @@ class GlobalActions implements DialogInterface.OnDismissListener, DialogInterfac
 
     /** {@inheritDoc} */
     public void onDismiss(DialogInterface dialog) {
+        // (Stericson) This leaves the statusbar alone if keyguard is showing,
+        // Otherwise, this will reenable the statusbar.
+       if (mKeyguardShowing != true) {
+            Log.d(TAG, "dismiss... reenabling expand");
         mStatusBar.disable(StatusBarManager.DISABLE_NONE);
+    }
     }
 
     /** {@inheritDoc} */
