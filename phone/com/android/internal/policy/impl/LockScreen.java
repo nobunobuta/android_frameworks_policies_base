@@ -1325,9 +1325,22 @@ class LockScreen extends LinearLayout implements KeyguardScreen, KeyguardUpdateM
         if (!mSimOk) {
             return;
         }
+        if (mPluggedIn) {
+            if (mBatteryLevel >= 100) {
+                mBatteryInfoText.setText(R.string.lockscreen_charged);
+            } else {
                 mBatteryInfoText.setText(
-                        getContext().getString(R.string.lockscreen_plugged_in, mBatteryLevel));
+                getContext().getString(R.string.lockscreen_plugged_in, mBatteryLevel));
             }
+        } else {
+            if (mBatteryLevel <= 15) {
+                mBatteryInfoText.setText(R.string.lockscreen_low_battery);
+            } else {
+                mBatteryInfoText.setText(
+                getContext().getString(R.string.zzbattery, mBatteryLevel));
+            }
+        }
+    }
 
     public void onTimeChanged() {
         refreshTimeAndDateDisplay();
@@ -1449,4 +1462,3 @@ class LockScreen extends LinearLayout implements KeyguardScreen, KeyguardUpdateM
         mUpdateMonitor.removeCallback(this);
     }
 }
-
