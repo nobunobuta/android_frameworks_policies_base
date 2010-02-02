@@ -52,6 +52,7 @@ import android.util.Log;
 import com.android.internal.telephony.IccCard;
 import android.content.Intent;
 import java.text.SimpleDateFormat;
+import android.content.ComponentName;
 /**
  * The screen within {@link LockPatternKeyguardView} that shows general
  * information about the device depending on its state, and how to get
@@ -236,6 +237,23 @@ class LockScreen extends LinearLayout implements KeyguardScreen, KeyguardUpdateM
         mHeaderSimBad2 = (TextView) findViewById(R.id.headerSimBad2);
 
         mTime = (TextView) findViewById(R.id.time);
+        mTime.setOnClickListener(new OnClickListener()
+        {
+            public void onClick(View v) {
+                try {
+                    Intent ClockIntent = new Intent(Intent.ACTION_MAIN);
+                    ClockIntent.setComponent(new ComponentName("com.android.deskclock","com.android.deskclock.DeskClock"));
+                    ClockIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK|Intent.FLAG_ACTIVITY_CLEAR_TOP);
+
+                    if (ClockIntent != null) {
+                        mContext.startActivity(ClockIntent);
+                    }
+                } catch (android.content.ActivityNotFoundException e) {
+                    Log.e(TAG, "Couldn't launch Desk Clock", e);
+                }
+            }
+        });
+        
         mDate = (TextView) findViewById(R.id.date);
 
         mSettingsGroup = (ViewGroup) findViewById(R.id.settingsgroup);
